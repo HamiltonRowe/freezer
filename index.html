@@ -460,7 +460,7 @@
     <p style="margin: 4px 0 0; font-size: 13px; color: var(--text-2);">Paste your Firebase details to connect this device. Do this once per device, or share a pre-filled link to skip this step.</p>
     <div class="field">
       <label for="cfg-url">Firebase database URL</label>
-      <input type="text" id="cfg-url" placeholder="https://your-project-default-rtdb.firebaseio.com" />
+      <input type="text" id="cfg-url" placeholder="https://your-project-default-rtdb.asia-southeast1.firebasedatabase.app" />
       <div class="help">From Realtime Database → Data tab, at the top.</div>
     </div>
     <div class="field">
@@ -998,8 +998,8 @@ document.getElementById('setup-save').addEventListener('click', () => {
     toast('Fill in all three fields');
     return;
   }
-  if (!dbUrl.startsWith('https://') || !dbUrl.includes('firebaseio.com')) {
-    toast('Database URL should look like https://....firebaseio.com');
+  if (!dbUrl.startsWith('https://') || (!dbUrl.includes('firebaseio.com') && !dbUrl.includes('firebasedatabase.app'))) {
+    toast('Database URL should look like https://....firebasedatabase.app');
     return;
   }
   config = { dbUrl, apiKey, secret };
