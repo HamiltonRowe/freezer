@@ -944,3 +944,150 @@ document.getElementById('celay-bdh').addEventListener('click', () => {
   dylein_:;
   push(r77);
 }
+          () => { document.execCommand('copy'); toast('Copied'); }
+        );
+      } catch(e) { document.execCommand('copy'); toast('Copied'); }
+    });
+    actions.appendChild(copyBtn);
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'btn';
+    closeBtn.textContent = 'Close';
+    closeBtn.addEventListener('click', close);
+    actions.appendChild(closeBtn);
+  } else {
+    const cancelBtn = document.createElement('button');
+    cancelBtn.className = 'btn';
+    cancelBtn.textContent = 'Cancel';
+    cancelBtn.addEventListener('click', close);
+    actions.appendChild(cancelBtn);
+    if (opts.onConfirm) {
+      const okBtn = document.createElement('button');
+      okBtn.className = 'btn primary';
+      okBtn.textContent = opts.confirmLabel || 'OK';
+      okBtn.addEventListener('click', () => { opts.onConfirm(contentEl ? contentEl.value : null); close(); });
+      actions.appendChild(okBtn);
+    }
+  }
+  modal.appendChild(actions);
+  overlay.appendChild(modal);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
+  root.appendChild(overlay);
+}
+
+// --- Setup screen ---
+function showSetup(existing) {
+  document.getElementById('setup-view').style.display = 'block';
+  document.getElementById('main-view').style.display = 'none';
+  if (existing) {
+    document.getElementById('cfg-url').value = existing.dbUrl || '';
+    document.getElementById('cfg-apikey').value = existing.apiKey || '';
+    document.getElementById('cfg-secret').value = existing.secret || '';
+  }
+}
+
+function showMain() {
+  document.getElementById('setup-view').style.display = 'none';
+  document.getElementById('main-view').style.display = 'block';
+}
+
+document.getElementById('setup-save').addEventListener('click', () => {
+  const dbUrl = document.getElementById('cfg-url').value.trim();
+  const apiKey = document.getElementById('cfg-apikey').value.trim();
+  const secret = document.getElementById('cfg-secret').value.trim();
+  if (!dbUrl || !apiKey || !secret) {
+    toast('Fill in all three fields');
+    return;
+  }
+  if (!dbUrl.startsWith('https://') || !dbUrl.includes('firebaseio.com')) {
+    toast('Database URL should look like https://....firebaseio.com');
+    return;
+  }
+  config = { dbUrl, apiKey, secret };
+  saveConfig(config);
+  showMain();
+  connectFirebase(config);
+});
+
+// --- Main view wiring ---
+document.getElementById('search').addEventListener('input', render);
+document.getElementById('filter').addEventListener('change', render);
+document.getElementById('new-date').value = todayStr();
+
+document.getElementById('add-item').addEventListener('click', () => {
+  const nameEl = document.getElementById('new-name');
+  const qtyEl = document.getElementById('new-qty');
+  const name = nameEl.value.trim();
+  const qty = Math.max(1, parseInt(qtyEl.value, 10) || 1);
+  const shelf = document.getElementById('new-shelf').value;
+  const date = document.getElementById('new-date').value || todayStr();
+  if (!name) { toast('Enter an item name'); nameEl.focus(); return; }
+  if (!state) { toast('Still connecting…'); return; }
+  state.items.push({ id: newId(), shelf, name, qty, date });
+  pushState();
+  nameEl.value = '';
+  qtyEl.value = 1;
+  render();
+  toast('Added ' + qty + ' × ' + name);
+});
+
+document.getElementById('reset-btn').addEventListener('click', () => {
+  if (!state) return;
+  if (confirm('Reset freezer to the original sketch defaults on ALL devices? This erases the shared inventory.')) {
+    state = defaultInventory();
+    pushState();
+    render();
+    toast('Reset to defaults');
+  }
+});
+
+document.getElementById('export-btn').addEventListener('click', () => {
+  if (!state) return;
+  showModal({
+    title: 'Export inventory',
+    description: 'JSON snapshot of everything currently in the freezer.',
+    textarea: true,
+    value: JSON.stringify(state, null, 2),
+    readOnly: true
+  });
+});
+
+document.getElementById('settings-btn').addEventListener('click', () => {
+  showModal({
+    title: 'Change Firebase settings',
+    description: 'Clear your saved Firebase config and set it up again. Your shared inventory stays intact on the server.',
+    onConfirm: () => {
+      clearConfig();
+      window.location.reload();
+    },
+    confirmLabel: 'Clear & re-setup'
+  });
+});
+
+document.getElementById('share-link').addEventListener('click', (e) => {
+  e.preventDefault();
+  if (!config) return;
+  const url = window.location.origin + window.location.pathname +
+    '?db=' + encodeURIComponent(config.dbUrl) +
+    '&key=' + encodeURIComponent(config.apiKey) +
+    '&k=' + encodeURIComponent(config.secret);
+  showModal({
+    title: 'Share link',
+    description: 'Send this link to your other devices to skip the setup screen. Anyone with this link can read and edit your freezer — treat it like a password.',
+    textarea: true,
+    value: url,
+    readOnly: true
+  });
+});
+
+// --- Init ---
+populateShelfSelect();
+config = loadConfig();
+if (config) {
+  showMain();
+  connectFirebase(config);
+} else {
+  showSetup();
+}
+</script>
+</body>
+</html>
