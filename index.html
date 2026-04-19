@@ -42,7 +42,7 @@
       --border: rgba(255,255,255,0.12);
       --border-strong: rgba(255,255,255,0.25);
       --accent: #85b7eb;
-  #   --accent-bg: rgba(23,95,165,0.2);
+      --accent-bg: rgba(23,95,165,0.2);
       --success: #c0dd97;
       --success-bg: rgba(59,109,17,0.2);
       --warning: #fac775;
@@ -450,6 +450,23 @@
       justify-self: start;
     }
   }
+
+  .edit-shelf-name {
+    background: transparent;
+    border: none;
+    border-bottom: 0.5px dashed transparent;
+    font-size: inherit;
+    font-weight: inherit;
+    font-family: inherit;
+    color: inherit;
+    padding: 2px 2px;
+    min-width: 0;
+    flex: 1;
+    cursor: pointer;
+    border-radius: 3px;
+  }
+  .edit-shelf-name:hover { border-bottom-color: rgba(255,255,255,0.4); }
+  .edit-shelf-name:focus { border-bottom-color: var(--accent); outline: none; cursor: text; background: rgba(0,0,0,0.08); }
 </style>
 </head>
 <body>
@@ -606,6 +623,7 @@ function defaultInventory() {
       date: today
     })),
     collapsed: {},
+    shelfNames: {},
     version: 1
   };
 }
@@ -719,6 +737,7 @@ async function connectFirebase(cfg) {
       if (val && Array.isArray(val.items)) {
         state = val;
         if (!state.collapsed) state.collapsed = {};
+        if (!state.shelfNames) state.shelfNames = {};
       } else if (!state) {
         // First time using this secret — seed with defaults
         state = defaultInventory();
@@ -776,7 +795,32 @@ function render() {
     header.innerHTML =
       '<span class="shelf-header-title"><span class="collapse-icon">▼</span><span class="shelf-name-text"></span></span>' +
       '<span class="shelf-count"></span>';
-    header.querySelector('.shelf-name-text').textContent = shelf.name;
+
+    const shelfNameInput = document.createElement('input');
+    shelfNameInput.type = 'text';
+    shelfNameInput.className = 'edit-shelf-name';
+    shelfNameInput.value = (state.shelfNames && state.shelfNames[shelf.id]) ? state.shelfNames[shelf.id] : shelf.name;
+    shelfNameInput.setAttribute('aria-label', 'Shelf name');
+    shelfNameInput.addEventListener('click', e => e.stopPropagation());
+    shelfNameInput.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { e.target.blur(); }
+      if (e.key === 'Escape') {
+        e.target.value = (state.shelfNames && state.shelfNames[shelf.id]) ? state.shelfNames[shelf.id] : shelf.name;
+        e.target.blur();
+      }
+    });
+    shelfNameInput.addEventListener('change', e => {
+      const v = e.target.value.trim();
+      if (!state.shelfNames) state.shelfNames = {};
+      if (v) {
+        state.shelfNames[shelf.id] = v;
+        pushState();
+        toast('Shelf renamed');
+      } else {
+        e.target.value = state.shelfNames[shelf.id] || shelf.name;
+      }
+    });
+    header.querySelector('.shelf-name-text').appendChild(shelfNameInput);
     header.querySelector('.shelf-count').textContent = allCount + ' items · ' + totalOnShelf + ' units';
     header.addEventListener('click', () => {
       state.collapsed[shelf.id] = !state.collapsed[shelf.id];
@@ -840,7 +884,7 @@ function render() {
         delBtn.setAttribute('aria-label', 'Delete ' + it.name);
         delBtn.addEventListener('click', (e) => {
           e.stopPropagation();
-          if (confirm('Delete "' + it.name + '" from ' + shelf.name + '?')) {
+          if (confirm('Delete "' + it.name + '" from ' + ((state.shelfNames && state.shelfNames[shelf.id]) || shelf.name) + '?')) {
             state.items = state.items.filter(x => x.id !== it.id);
             pushState();
             render();
@@ -989,10 +1033,7 @@ function showMain() {
   document.getElementById('setup-view').style.display = 'none';
   document.getElementById('main-view').style.display = 'block';
 }
-
-document.getElementById('setup-save').addEventListener('click', () => {
-  const dbUrl = document.getElementById('cfg-url').value.trim();
-  const apiKey = document.getElementById('cfg-apikey').value.trim();
+fg-apikey').value.trim();
   const secret = document.getElementById('cfg-secret').value.trim();
   if (!dbUrl || !apiKey || !secret) {
     toast('Fill in all three fields');
