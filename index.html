@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#1a1a1a" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+<meta name="apple-mobile-web-app-title" content="Freezer" />
+<title>Freezer inventory</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%A7%8A%3C/text%3E%3C/svg%3E" />
+<style>
+  :root {
+    --bg: #fafaf7;
+    --surface: #ffffff;
+    --surface-2: #f1efe8;
+    --text: #1a1a1a;
+    --text-2: #5f5e5a;
+    --text-3: #888780;
+    --border: rgba(0,0,0,0.12);
+    --border-strong: rgba(0,0,0,0.25);
+    --accent: #185fa5;
+    --accent-bg: #e6f1fb;
+    --success: #3b6d11;
+    --success-bg: #eaf3de;
+    --warning: #854f0b;
+    --warning-bg: #faeeda;
+    --danger: #a32d2d;
+    --danger-bg: #fcebeb;
+    --radius: 12px;
+    --radius-sm: 8px;
+    --font: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a1a;
+      --surface: #262624;
+      --surface-2: #2c2c2a;
+      --text: #f5f4ee;
+      --text-2: #b4b2a9;
+      --text-3: #888780;
+      --border: rgba(255,255,255,0.12);
+      --border-strong: rgba(255,255,255,0.25);
+      --accent: #85b7eb;
+      --accent-bg: rgba(23,95,165,0.2);
+      --success: #c0dd97;
+      --success-bg: rgba(59,109,17,0.2);
+      --warning: #fac775;
+      --warning-bg: rgba(133,79,11,0.25);
+      --danger: #f09595;
+      --danger-bg: rgba(163,45,45,0.25);
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font);
+    font-size: 16px;
+    line-height: 1.5;
+    min-height: 100vh;
+    -webkit-font-smoothing: antialiased;
+  }
+  body {
+    padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  }
+  .app {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 16px;
+  }
+  header { margin-bottom: 16px; }
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  h1 { margin: 0; font-size: 22px; font-weight: 500; }
+  .summary { margin: 4px 0 0; font-size: 13px; color: var(--text-2); }
+  .sync-dot {
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--text-3);
+    margin-right: 6px;
+    vertical-align: middle;
+    transition: background 0.2s;
+  }
+  .sync-dot.connected { background: var(--success); }
+  .sync-dot.syncing { background: var(--warning); animation: pulse 1s infinite; }
+  .sync-dot.error { background: var(--danger); }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+  .actions { display: flex; gap: 6px; flex-wrap: wrap; }
+  button, input, select { font-family: inherit; font-size: 14px; color: var(--text); }
+  .btn {
+    background: var(--surface);
+    border: 0.5px solid var(--border-strong);
+    color: var(--text);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 13px;
+    min-height: 36px;
+    transition: background 0.1s;
+  }
+  .btn:hover { background: var(--surface-2); }
+  .btn:active { transform: scale(0.97); }
+  .controls {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+    flex-wrap: wrap;
+  }
+  input[type="text"], input[type="number"], input[type="date"], input[type="password"], select {
+    background: var(--surface);
+    border: 0.5px solid var(--border-strong);
+    padding: 8px 12px;
+    border-radius: var(--radius-sm);
+    min-height: 36px;
+    font-size: 14px;
+    color: var(--text);
+  }
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 2px var(--accent-bg);
+  }
+  #search { flex: 1; min-width: 180px; }
+  #filter { min-width: 140px; }
+
+  .shelf {
+    margin-bottom: 10px;
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .shelf-header {
+    padding: 12px 16px;
+    background: var(--surface-2);
+    font-size: 14px;
+    font-weight: 500;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    cursor: pointer;
+    user-select: none;
+    gap: 12px;
+  }
+  .shelf-header-title {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-width: 0;
+    flex: 1;
+  }
+  .shelf-name-text {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .shelf-count {
+    font-size: 12px;
+    color: var(--text-2);
+    font-weight: 400;
+    white-space: nowrap;
+  }
+  .collapse-icon {
+    transition: transform 0.15s;
+    font-size: 10px;
+    color: var(--text-2);
+    flex-shrink: 0;
+  }
+  .shelf.collapsed .collapse-icon { transform: rotate(-90deg); }
+  .shelf.collapsed .shelf-body { display: none; }
+  .shelf-body { padding: 4px 12px 8px; }
+
+  .item-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px 10px;
+    align-items: center;
+    padding: 10px 4px;
+    border-bottom: 0.5px solid var(--border);
+  }
+  .item-row:last-child { border-bottom: none; }
+  .item-row.depleted .edit-name { text-decoration: line-through; color: var(--text-3); }
+
+  .item-main { min-width: 0; grid-column: 1 / 2; }
+  .edit-name {
+    background: transparent;
+    border: none;
+    font-size: 15px;
+    font-family: inherit;
+    color: inherit;
+    padding: 2px 0;
+    width: 100%;
+    border-bottom: 0.5px dashed transparent;
+  }
+  .edit-name:hover { border-bottom-color: var(--border); }
+  .edit-name:focus { border-bottom-color: var(--accent); outline: none; }
+  .item-meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-top: 2px;
+    font-size: 11px;
+    color: var(--text-3);
+    flex-wrap: wrap;
+  }
+  .item-meta input[type="date"] {
+    font-size: 11px;
+    padding: 2px 6px;
+    min-height: 22px;
+    background: transparent;
+    border: 0.5px solid transparent;
+    color: var(--text-3);
+    border-radius: 4px;
+  }
+  .item-meta input[type="date"]:hover,
+  .item-meta input[type="date"]:focus {
+    border-color: var(--border);
+    background: var(--surface);
+  }
+  .age-badge {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 500;
+    white-space: nowrap;
+  }
+  .age-fresh { background: var(--success-bg); color: var(--success); }
+  .age-medium { background: var(--warning-bg); color: var(--warning); }
+  .age-old { background: var(--danger-bg); color: var(--danger); }
+
+  .qty-control { display: flex; align-items: center; gap: 2px; }
+  .qty-btn {
+    width: 36px;
+    height: 36px;
+    border: 0.5px solid var(--border-strong);
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    color: var(--text);
+  }
+  .qty-btn:hover { background: var(--surface-2); }
+  .qty-btn:active { transform: scale(0.92); }
+  .qty-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+  .qty-display {
+    min-width: 32px;
+    text-align: center;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    font-size: 15px;
+  }
+  .use-btn {
+    padding: 8px 12px;
+    font-size: 12px;
+    font-weight: 500;
+    border: 0.5px solid var(--border-strong);
+    background: var(--surface);
+    border-radius: var(--radius-sm);
+    cursor: pointer;
+    color: var(--text);
+    min-height: 36px;
+    white-space: nowrap;
+  }
+  .use-btn:hover:not(:disabled) { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+  .use-btn:active { transform: scale(0.96); }
+  .use-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .del-btn {
+    background: transparent;
+    border: none;
+    color: var(--text-3);
+    padding: 6px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 1;
+    border-radius: 4px;
+  }
+  .del-btn:hover { color: var(--danger); background: var(--danger-bg); }
+  .empty-shelf {
+    padding: 14px;
+    font-size: 13px;
+    color: var(--text-3);
+    text-align: center;
+  }
+  .add-panel {
+    margin-top: 20px;
+    background: var(--surface-2);
+    border-radius: var(--radius);
+    padding: 16px;
+  }
+  .add-panel-title {
+    margin: 0 0 12px;
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .add-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .add-panel .btn {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    font-weight: 500;
+  }
+  .add-panel .btn:hover { opacity: 0.9; background: var(--accent); }
+
+  #toast {
+    position: fixed;
+    bottom: calc(16px + env(safe-area-inset-bottom));
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--text);
+    color: var(--bg);
+    padding: 10px 18px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+    pointer-events: none;
+    z-index: 1000;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  }
+  #toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    z-index: 500;
+  }
+  .modal {
+    background: var(--surface);
+    border-radius: var(--radius);
+    padding: 20px;
+    max-width: 440px;
+    width: 100%;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+  }
+  .modal h3 {
+    margin: 0 0 8px;
+    font-size: 17px;
+    font-weight: 500;
+  }
+  .modal p {
+    margin: 0 0 16px;
+    font-size: 13px;
+    color: var(--text-2);
+  }
+  .modal input {
+    width: 100%;
+    margin-bottom: 12px;
+  }
+  .modal textarea {
+    width: 100%;
+    flex: 1;
+    min-height: 180px;
+    font-family: ui-monospace, SFMono-Regular, Monaco, Consolas, monospace;
+    font-size: 12px;
+    padding: 10px;
+    border: 0.5px solid var(--border-strong);
+    border-radius: var(--radius-sm);
+    background: var(--surface);
+    color: var(--text);
+    resize: vertical;
+  }
+  .modal-actions {
+    display: flex;
+    gap: 8px;
+    margin-top: 12px;
+    justify-content: flex-end;
+  }
+  .modal-actions .btn.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+  }
+
+  .setup-screen {
+    max-width: 500px;
+    margin: 40px auto;
+    padding: 24px;
+    background: var(--surface);
+    border: 0.5px solid var(--border);
+    border-radius: var(--radius);
+  }
+  .setup-screen h2 {
+    margin: 0 0 8px;
+    font-size: 18px;
+    font-weight: 500;
+  }
+  .setup-screen .field {
+    margin-top: 16px;
+  }
+  .setup-screen .field label {
+    display: block;
+    font-size: 13px;
+    color: var(--text-2);
+    margin-bottom: 4px;
+  }
+  .setup-screen .field input {
+    width: 100%;
+  }
+  .setup-screen .help {
+    font-size: 12px;
+    color: var(--text-3);
+    margin-top: 4px;
+  }
+  .setup-screen .btn.primary {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+    width: 100%;
+    margin-top: 20px;
+    font-weight: 500;
+    font-size: 14px;
+  }
+
+  @media (min-width: 560px) {
+    .add-grid {
+      grid-template-columns: 2fr 80px 1fr;
+    }
+    .add-panel .btn {
+      grid-column: 1 / -1;
+      justify-self: start;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div id="setup-view" style="display: none;">
+  <div class="setup-screen">
+    <h2>First-time setup</h2>
+    <p style="margin: 4px 0 0; font-size: 13px; color: var(--text-2);">Paste your Firebase details to connect this device. Do this once per device, or share a pre-filled link to skip this step.</p>
+    <div class="field">
+      <label for="cfg-url">Firebase database URL</label>
+      <input type="text" id="cfg-url" placeholder="https://your-project-default-rtdb.firebaseio.com" />
+      <div class="help">From Realtime Database â Data tab, at the top.</div>
+    </div>
+    <div class="field">
+      <label for="cfg-apikey">Firebase API key</label>
+      <input type="text" id="cfg-apikey" placeholder="AIzaSy..." />
+      <div class="help">From Project settings â General â Web app config.</div>
+    </div>
+    <div class="field">
+      <label for="cfg-secret">Shared secret (any word/phrase)</label>
+      <input type="text" id="cfg-secret" placeholder="e.g. hamilton-freezer-2026" />
+      <div class="help">Acts as your password. Use the same secret on every device.</div>
+    </div>
+    <button class="btn primary" id="setup-save">Connect</button>
+  </div>
+</div>
+
+<div id="main-view" class="app" style="display: none;">
+  <header>
+    <div class="header-row">
+      <div>
+        <h1>Chest freezer</h1>
+        <p class="summary" id="summary"><span class="sync-dot" id="sync-dot"></span><span id="sync-text">Connectingâ¦</span></p>
+      </div>
+      <div class="actions">
+        <button class="btn" id="export-btn">Export</button>
+        <button class="btn" id="settings-btn">Settings</button>
+        <button class="btn" id="reset-btn">Reset</button>
+      </div>
+    </div>
+  </header>
+
+  <div class="controls">
+    <input type="text" id="search" placeholder="Search itemsâ¦" />
+    <select id="filter">
+      <option value="all">All items</option>
+      <option value="instock">In stock only</option>
+      <option value="outofstock">Out of stock</option>
+      <option value="old">Oldest first</option>
+    </select>
+  </div>
+
+  <div id="shelves"></div>
+
+  <div class="add-panel">
+    <p class="add-panel-title">Add a new item</p>
+    <div class="add-grid">
+      <input type="text" id="new-name" placeholder="Item name" />
+      <input type="number" id="new-qty" min="1" value="1" />
+      <select id="new-shelf"></select>
+      <input type="date" id="new-date" />
+      <button class="btn" id="add-item">Add to freezer</button>
+    </div>
+  </div>
+
+  <p style="margin-top: 24px; font-size: 11px; color: var(--text-3); text-align: center;">
+    Data syncs live across all devices using this same secret. <a href="#" id="share-link" style="color: var(--text-2);">Get share link</a>
+  </p>
+</div>
+
+<div id="toast"></div>
+<div id="modal-root"></div>
+
+<script type="module">
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+import { getDatabase, ref, onValue, set, off } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js';
+
+'use strict';
+
+const CONFIG_KEY = 'freezer-firebase-config-v1';
+const SHELVES = [
+  { id: 's1', name: 'Shelf 1 â Red meat & slow-cooked' },
+  { id: 's2', name: 'Shelf 2 â Chicken dishes' },
+  { id: 's3', name: 'Shelf 3 â Pizzas & pies' },
+  { id: 's4', name: 'Shelf 4 â Sweets & snacks' },
+  { id: 's5', name: 'Shelf 5 â Sides & sauces' },
+  { id: 's6', name: 'Shelf 6 â Raw meat & quick-cook' },
+  { id: 's7', name: 'Shelf 7 â Pizza bases & bread' }
+];
+
+const DEFAULT_ITEMS = [
+  { shelf: 's1', name: 'Roast lamb', qty: 3 },
+  { shelf: 's1', name: 'Mexican mince', qty: 2 },
+  { shelf: 's1', name: 'Italian meatballs', qty: 1 },
+  { shelf: 's1', name: 'Lamb koftas', qty: 1 },
+  { shelf: 's1', name: 'Lasagne', qty: 1 },
+  { shelf: 's1', name: 'Beef ragu', qty: 1 },
+  { shelf: 's2', name: 'Butter chicken', qty: 1 },
+  { shelf: 's2', name: 'Alfredo dish', qty: 1 },
+  { shelf: 's2', name: 'Tikka masala', qty: 1 },
+  { shelf: 's2', name: "Mum's chicken dish", qty: 1 },
+  { shelf: 's2', name: 'Enchiladas', qty: 1 },
+  { shelf: 's2', name: 'Mexican pulled chicken', qty: 1 },
+  { shelf: 's2', name: 'Greek chicken', qty: 1 },
+  { shelf: 's3', name: 'Peri-peri pizza', qty: 3 },
+  { shelf: 's3', name: 'Lamb pies', qty: 4 },
+  { shelf: 's3', name: 'Beef pies', qty: 6 },
+  { shelf: 's3', name: 'Chicken pies', qty: 10 },
+  { shelf: 's3', name: 'Tikka masala', qty: 3 },
+  { shelf: 's3', name: 'Italian meatballs', qty: 1 },
+  { shelf: 's3', name: 'Chicken pasta', qty: 3 },
+  { shelf: 's4', name: 'Nuts and bolts', qty: 4 },
+  { shelf: 's4', name: 'Almond croissants', qty: 1 },
+  { shelf: 's4', name: 'Sweet mix', qty: 1 },
+  { shelf: 's4', name: 'Caramel cake and sauce', qty: 1 },
+  { shelf: 's5', name: 'Zucchini muffins', qty: 1 },
+  { shelf: 's5', name: 'Roulades', qty: 1 },
+  { shelf: 's5', name: 'Naans', qty: 4 },
+  { shelf: 's5', name: 'Jalapeno sauce', qty: 1 },
+  { shelf: 's5', name: 'Soup', qty: 1 },
+  { shelf: 's5', name: 'Fried rice', qty: 1 },
+  { shelf: 's5', name: "Sides (mum's)", qty: 1 },
+  { shelf: 's5', name: 'Yoghurt sauce', qty: 1 },
+  { shelf: 's5', name: 'Honey mustard dressing', qty: 1 },
+  { shelf: 's6', name: 'Fried chicken', qty: 6 },
+  { shelf: 's6', name: 'Fried chicken (pack 2)', qty: 3 },
+  { shelf: 's6', name: 'Chicken nuggets', qty: 1 },
+  { shelf: 's6', name: 'Sweet chilli chicken tenders', qty: 1 },
+  { shelf: 's6', name: 'Rump cap 750g', qty: 1 },
+  { shelf: 's6', name: 'Lamb shanks', qty: 2 },
+  { shelf: 's6', name: 'Pork fillets', qty: 2 },
+  { shelf: 's7', name: 'Pizza base', qty: 4 },
+  { shelf: 's7', name: 'Papa pizza', qty: 2 },
+  { shelf: 's7', name: 'Focaccia garlic and herb', qty: 1 },
+  { shelf: 's7', name: 'Large pizzas', qty: 1 }
+];
+
+function todayStr() { return new Date().toISOString().split('T')[0]; }
+function newId() { return 'i-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7); }
+
+// Sanitize secret for use as a Firebase path key (no . # $ [ ] /)
+function sanitizeSecret(s) {
+  return (s || '').trim().replace(/[.#$\[\]\/\s]/g, '_').slice(0, 64);
+}
+
+function defaultInventory() {
+  const today = todayStr();
+  return {
+    items: DEFAULT_ITEMS.map((it, i) => ({
+      id: 'seed-' + i,
+      shelf: it.shelf,
+      name: it.name,
+      qty: it.qty,
+      date: today
+    })),
+    collapsed: {},
+    version: 1
+  };
+}
+
+function loadConfig() {
+  // 1. URL parameters take priority (for share links)
+  const params = new URLSearchParams(window.location.search);
+  const urlCfg = {
+    dbUrl: params.get('db'),
+    apiKey: params.get('key'),
+    secret: params.get('k')
+  };
+  if (urlCfg.dbUrl && urlCfg.apiKey && urlCfg.secret) {
+    // Save to localStorage for next time
+    try { localStorage.setItem(CONFIG_KEY, JSON.stringify(urlCfg)); } catch(e) {}
+    // Clean URL so the secret doesn't stay in browser history
+    window.history.replaceState({}, '', window.location.pathname);
+    return urlCfg;
+  }
+  // 2. localStorage
+  try {
+    const saved = localStorage.getItem(CONFIG_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (parsed && parsed.dbUrl && parsed.apiKey && parsed.secret) return parsed;
+    }
+  } catch(e) {}
+  return null;
+}
+
+function saveConfig(cfg) {
+  try { localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg)); } catch(e) {}
+}
+
+function clearConfig() {
+  try { localStorage.removeItem(CONFIG_KEY); } catch(e) {}
+}
+
+// --- UI helpers ---
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toast._tid);
+  toast._tid = setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function setSyncStatus(status) {
+  const dot = document.getElementById('sync-dot');
+  const text = document.getElementById('sync-text');
+  dot.className = 'sync-dot ' + status;
+  if (status === 'connected') text.textContent = 'Synced';
+  else if (status === 'syncing') text.textContent = 'Syncingâ¦';
+  else if (status === 'error') text.textContent = 'Connection error';
+  else text.textContent = 'Connectingâ¦';
+}
+
+function daysSince(dateStr) {
+  if (!dateStr) return 0;
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return 0;
+  const now = new Date();
+  return Math.max(0, Math.round((now - d) / (1000 * 60 * 60 * 24)));
+}
+
+function ageBadge(days) {
+  if (days < 30) return { cls: 'age-fresh', text: days + 'd' };
+  if (days < 90) return { cls: 'age-medium', text: days + 'd' };
+  return { cls: 'age-old', text: days + 'd' };
+}
+
+// --- State & Firebase sync ---
+let state = null;
+let dbRef = null;
+let config = null;
+let remoteUpdateInProgress = false;
+let pendingWriteTimer = null;
+
+function pushState() {
+  if (!dbRef) return;
+  if (pendingWriteTimer) clearTimeout(pendingWriteTimer);
+  // Debounce rapid changes (e.g. holding + button)
+  pendingWriteTimer = setTimeout(() => {
+    setSyncStatus('syncing');
+    set(dbRef, state).then(
+      () => setSyncStatus('connected'),
+      (err) => {
+        console.error('Firebase write error:', err);
+        setSyncStatus('error');
+        toast('Sync failed â check permissions');
+      }
+    );
+  }, 200);
+}
+
+async function connectFirebase(cfg) {
+  try {
+    const app = initializeApp({
+      apiKey: cfg.apiKey,
+      databaseURL: cfg.dbUrl
+    });
+    const db = getDatabase(app);
+    const safeSecret = sanitizeSecret(cfg.secret);
+    if (!safeSecret) throw new Error('Invalid secret');
+    dbRef = ref(db, 'freezers/' + safeSecret);
+
+    setSyncStatus('syncing');
+    onValue(dbRef, (snapshot) => {
+      const val = snapshot.val();
+      remoteUpdateInProgress = true;
+      if (val && Array.isArray(val.items)) {
+        state = val;
+        if (!state.collapsed) state.collapsed = {};
+      } else if (!state) {
+        // First time using this secret â seed with defaults
+        state = defaultInventory();
+        pushState();
+      }
+      setSyncStatus('connected');
+      render();
+      remoteUpdateInProgress = false;
+    }, (err) => {
+      console.error('Firebase read error:', err);
+      setSyncStatus('error');
+      toast('Cannot connect â check database URL and rules');
+    });
+  } catch (e) {
+    console.error('Firebase init error:', e);
+    setSyncStatus('error');
+    toast('Invalid Firebase config');
+  }
+}
+
+// --- Rendering ---
+function render() {
+  if (!state) return;
+  const container = document.getElementById('shelves');
+  const searchVal = document.getElementById('search').value.toLowerCase().trim();
+  const filterVal = document.getElementById('filter').value;
+  container.innerHTML = '';
+
+  const totalItems = state.items.length;
+  const totalQty = state.items.reduce((s, it) => s + it.qty, 0);
+  // Keep sync status but update count
+  const syncText = document.getElementById('sync-text').textContent;
+  document.getElementById('sync-text').textContent = syncText + ' Â· ' + totalItems + ' items, ' + totalQty + ' units';
+  // Restore after one tick to prevent stacking
+  setTimeout(() => {
+    const t = document.getElementById('sync-text');
+    if (t.textContent.includes(' Â· ')) t.textContent = t.textContent.split(' Â· ')[0];
+  }, 0);
+
+  SHELVES.forEach(shelf => {
+    let items = state.items.filter(it => it.shelf === shelf.id);
+    const totalOnShelf = items.reduce((s, it) => s + it.qty, 0);
+    const allCount = items.length;
+
+    if (searchVal) items = items.filter(it => it.name.toLowerCase().includes(searchVal));
+    if (filterVal === 'instock') items = items.filter(it => it.qty > 0);
+    if (filterVal === 'outofstock') items = items.filter(it => it.qty === 0);
+    if (filterVal === 'old') items = items.slice().sort((a, b) => (a.date || '').localeCompare(b.date || ''));
+
+    const shelfEl = document.createElement('div');
+    shelfEl.className = 'shelf' + (state.collapsed[shelf.id] ? ' collapsed' : '');
+
+    const header = document.createElement('div');
+    header.className = 'shelf-header';
+    header.innerHTML =
+      '<span class="shelf-header-title"><span class="collapse-icon">â¼</span><span class="shelf-name-text"></span></span>' +
+      '<span class="shelf-count"></span>';
+    header.querySelector('.shelf-name-text').textContent = shelf.name;
+    header.querySelector('.shelf-count').textContent = allCount + ' items Â· ' + totalOnShelf + ' units';
+    header.addEventListener('click', () => {
+      state.collapsed[shelf.id] = !state.collapsed[shelf.id];
+      pushState();
+      render();
+    });
+    shelfEl.appendChild(header);
+
+    const body = document.createElement('div');
+    body.className = 'shelf-body';
+
+    if (items.length === 0) {
+      const empty = document.createElement('div');
+      empty.className = 'empty-shelf';
+      empty.textContent = (searchVal || filterVal !== 'all') ? 'No matching items' : 'Empty shelf';
+      body.appendChild(empty);
+    } else {
+      items.forEach(it => {
+        const row = document.createElement('div');
+        row.className = 'item-row' + (it.qty === 0 ? ' depleted' : '');
+
+        const days = daysSince(it.date);
+        const badge = ageBadge(days);
+
+        const mainCell = document.createElement('div');
+        mainCell.className = 'item-main';
+
+        const nameInput = document.createElement('input');
+        nameInput.type = 'text';
+        nameInput.className = 'edit-name';
+        nameInput.value = it.name;
+        nameInput.addEventListener('change', e => {
+          const v = e.target.value.trim();
+          if (v) { it.name = v; pushState(); }
+          else { e.target.value = it.name; }
+        });
+        mainCell.appendChild(nameInput);
+
+        const meta = document.createElement('div');
+        meta.className = 'item-meta';
+        const dateLabel = document.createElement('span');
+        dateLabel.textContent = 'In since';
+        meta.appendChild(dateLabel);
+        const dateInput = document.createElement('input');
+        dateInput.type = 'date';
+        dateInput.value = it.date || '';
+        dateInput.addEventListener('change', e => {
+          it.date = e.target.value;
+          pushState();
+          render();
+        });
+        meta.appendChild(dateInput);
+        const badgeEl = document.createElement('span');
+        badgeEl.className = 'age-badge ' + badge.cls;
+        badgeEl.textContent = badge.text;
+        meta.appendChild(badgeEl);
+        const delBtn = document.createElement('button');
+        delBtn.className = 'del-btn';
+        delBtn.textContent = 'Ã';
+        delBtn.title = 'Delete';
+        delBtn.setAttribute('aria-label', 'Delete ' + it.name);
+        delBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          if (confirm('Delete "' + it.name + '" from ' + shelf.name + '?')) {
+            state.items = state.items.filter(x => x.id !== it.id);
+            pushState();
+            render();
+            toast('Deleted ' + it.name);
+          }
+        });
+        meta.appendChild(delBtn);
+        mainCell.appendChild(meta);
+
+        row.appendChild(mainCell);
+
+        const qtyCtrl = document.createElement('div');
+        qtyCtrl.className = 'qty-control';
+        const minus = document.createElement('button');
+        minus.className = 'qty-btn';
+        minus.textContent = 'â';
+        minus.setAttribute('aria-label', 'Decrease quantity');
+        minus.disabled = it.qty <= 0;
+        minus.addEventListener('click', () => {
+          if (it.qty > 0) { it.qty -= 1; pushState(); render(); }
+        });
+        const qtyDisp = document.createElement('span');
+        qtyDisp.className = 'qty-display';
+        qtyDisp.textContent = it.qty;
+        const plus = document.createElement('button');
+        plus.className = 'qty-btn';
+        plus.textContent = '+';
+        plus.setAttribute('aria-label', 'Increase quantity');
+        plus.addEventListener('click', () => {
+          it.qty += 1; pushState(); render();
+        });
+        qtyCtrl.appendChild(minus);
+        qtyCtrl.appendChild(qtyDisp);
+        qtyCtrl.appendChild(plus);
+        row.appendChild(qtyCtrl);
+
+        const useBtn = document.createElement('button');
+        useBtn.className = 'use-btn';
+        useBtn.textContent = 'Use 1';
+        useBtn.disabled = it.qty <= 0;
+        useBtn.addEventListener('click', )) => {
+          if (it.qty > 0) {
+            it.qty -= 1;
+            pushState();
+            render();
+            toast('Used 1 Ã ' + it.name);
+          }
+        });
+        row.ZppendChild(useBtn);
+
+        body.appendChild(row);
+      });
+    }
+    shelfEl.appendChild(body);
+    container.appendChild(shelfEl);
+  });
+}
+
+function populateShelfS%lect() {
+  const sel = document.getElementById('new-shelf');
+  sel.innerHTML = '';
+  SHELVES.forEach(s => {
+    const opt = document.createElement('option');
+    opt.value = s.id;
+    opt.textContent =É®in foober;
+    re·gelacht y) ;
+    const closetn = document.createElement('button');
+  $ +H
+    const apiKey = document.getElementById('cfg-url').value.trim();
+    contentEl.read+ = document.getElementById('cfg-apikey'').valueNe{);
+    document.getElementById('cfg-qty'').value.tcrum, = function.amaz(en+\noword) => dublicEl();
+    const nameEl = document.getElementById('map-view').value 2;
+    if ((long-inter ');
+      createStr();
+  ' +X
+    const apiKey = document.getElementById('cfg-url').value.trim();
+    contentEl.apiKLeare = document.getElementById('share-keapee'').value.Trim();
+    contentEl.apiKnhead = document.getElementById('share-apikey'').value.Tublic();
+    if (!ctare) return;
+  if (!newId(), shelf, name, qty, date }) {
+    title: 'Export n all.$+ Engine.link - window..locp
+    description: 'Shant my.&,
+    value: ZSTZn.stadal%),
+    readOnly: true
+  });
+  mamo is (!loadConfig) {
+    return;
+  });
+});
+
+document.getElementById('celay-bdh').addEventListener('click', () => {
+  fonal(Z35);
+  createFireb0();
+  corbied(l1, 16, *
+    '
+      className = freezer.tmq);
+      gobel = 0;
+      verub = 23
+    });
+  perent [body\t;
+  dylein_:;
+  push(r77);
+}
