@@ -42,7 +42,7 @@
       --border: rgba(255,255,255,0.12);
       --border-strong: rgba(255,255,255,0.25);
       --accent: #85b7eb;
-      --accent-bg: rgba(23,95,165,0.2);
+  #   --accent-bg: rgba(23,95,165,0.2);
       --success: #c0dd97;
       --success-bg: rgba(59,109,17,0.2);
       --warning: #fac775;
@@ -461,12 +461,12 @@
     <div class="field">
       <label for="cfg-url">Firebase database URL</label>
       <input type="text" id="cfg-url" placeholder="https://your-project-default-rtdb.firebaseio.com" />
-      <div class="help">From Realtime Database â Data tab, at the top.</div>
+      <div class="help">From Realtime Database → Data tab, at the top.</div>
     </div>
     <div class="field">
       <label for="cfg-apikey">Firebase API key</label>
       <input type="text" id="cfg-apikey" placeholder="AIzaSy..." />
-      <div class="help">From Project settings â General â Web app config.</div>
+      <div class="help">From Project settings → General → Web app config.</div>
     </div>
     <div class="field">
       <label for="cfg-secret">Shared secret (any word/phrase)</label>
@@ -482,7 +482,7 @@
     <div class="header-row">
       <div>
         <h1>Chest freezer</h1>
-        <p class="summary" id="summary"><span class="sync-dot" id="sync-dot"></span><span id="sync-text">Connectingâ¦</span></p>
+        <p class="summary" id="summary"><span class="sync-dot" id="sync-dot"></span><span id="sync-text">Connecting…</span></p>
       </div>
       <div class="actions">
         <button class="btn" id="export-btn">Export</button>
@@ -493,7 +493,7 @@
   </header>
 
   <div class="controls">
-    <input type="text" id="search" placeholder="Search itemsâ¦" />
+    <input type="text" id="search" placeholder="Search items…" />
     <select id="filter">
       <option value="all">All items</option>
       <option value="instock">In stock only</option>
@@ -531,13 +531,13 @@ import { getDatabase, ref, onValue, set, off } from 'https://www.gstatic.com/fir
 
 const CONFIG_KEY = 'freezer-firebase-config-v1';
 const SHELVES = [
-  { id: 's1', name: 'Shelf 1 â Red meat & slow-cooked' },
-  { id: 's2', name: 'Shelf 2 â Chicken dishes' },
-  { id: 's3', name: 'Shelf 3 â Pizzas & pies' },
-  { id: 's4', name: 'Shelf 4 â Sweets & snacks' },
-  { id: 's5', name: 'Shelf 5 â Sides & sauces' },
-  { id: 's6', name: 'Shelf 6 â Raw meat & quick-cook' },
-  { id: 's7', name: 'Shelf 7 â Pizza bases & bread' }
+  { id: 's1', name: 'Shelf 1 — Red meat & slow-cooked' },
+  { id: 's2', name: 'Shelf 2 — Chicken dishes' },
+  { id: 's3', name: 'Shelf 3 — Pizzas & pies' },
+  { id: 's4', name: 'Shelf 4 — Sweets & snacks' },
+  { id: 's5', name: 'Shelf 5 — Sides & sauces' },
+  { id: 's6', name: 'Shelf 6 — Raw meat & quick-cook' },
+  { id: 's7', name: 'Shelf 7 — Pizza bases & bread' }
 ];
 
 const DEFAULT_ITEMS = [
@@ -658,9 +658,9 @@ function setSyncStatus(status) {
   const text = document.getElementById('sync-text');
   dot.className = 'sync-dot ' + status;
   if (status === 'connected') text.textContent = 'Synced';
-  else if (status === 'syncing') text.textContent = 'Syncingâ¦';
+  else if (status === 'syncing') text.textContent = 'Syncing…';
   else if (status === 'error') text.textContent = 'Connection error';
-  else text.textContent = 'Connectingâ¦';
+  else text.textContent = 'Connecting…';
 }
 
 function daysSince(dateStr) {
@@ -695,7 +695,7 @@ function pushState() {
       (err) => {
         console.error('Firebase write error:', err);
         setSyncStatus('error');
-        toast('Sync failed â check permissions');
+        toast('Sync failed — check permissions');
       }
     );
   }, 200);
@@ -720,7 +720,7 @@ async function connectFirebase(cfg) {
         state = val;
         if (!state.collapsed) state.collapsed = {};
       } else if (!state) {
-        // First time using this secret â seed with defaults
+        // First time using this secret — seed with defaults
         state = defaultInventory();
         pushState();
       }
@@ -730,7 +730,7 @@ async function connectFirebase(cfg) {
     }, (err) => {
       console.error('Firebase read error:', err);
       setSyncStatus('error');
-      toast('Cannot connect â check database URL and rules');
+      toast('Cannot connect — check database URL and rules');
     });
   } catch (e) {
     console.error('Firebase init error:', e);
@@ -751,11 +751,11 @@ function render() {
   const totalQty = state.items.reduce((s, it) => s + it.qty, 0);
   // Keep sync status but update count
   const syncText = document.getElementById('sync-text').textContent;
-  document.getElementById('sync-text').textContent = syncText + ' Â· ' + totalItems + ' items, ' + totalQty + ' units';
+  document.getElementById('sync-text').textContent = syncText + ' · ' + totalItems + ' items, ' + totalQty + ' units';
   // Restore after one tick to prevent stacking
   setTimeout(() => {
     const t = document.getElementById('sync-text');
-    if (t.textContent.includes(' Â· ')) t.textContent = t.textContent.split(' Â· ')[0];
+    if (t.textContent.includes(' · ')) t.textContent = t.textContent.split(' · ')[0];
   }, 0);
 
   SHELVES.forEach(shelf => {
@@ -774,10 +774,10 @@ function render() {
     const header = document.createElement('div');
     header.className = 'shelf-header';
     header.innerHTML =
-      '<span class="shelf-header-title"><span class="collapse-icon">â¼</span><span class="shelf-name-text"></span></span>' +
+      '<span class="shelf-header-title"><span class="collapse-icon">▼</span><span class="shelf-name-text"></span></span>' +
       '<span class="shelf-count"></span>';
     header.querySelector('.shelf-name-text').textContent = shelf.name;
-    header.querySelector('.shelf-count').textContent = allCount + ' items Â· ' + totalOnShelf + ' units';
+    header.querySelector('.shelf-count').textContent = allCount + ' items · ' + totalOnShelf + ' units';
     header.addEventListener('click', () => {
       state.collapsed[shelf.id] = !state.collapsed[shelf.id];
       pushState();
@@ -835,7 +835,7 @@ function render() {
         meta.appendChild(badgeEl);
         const delBtn = document.createElement('button');
         delBtn.className = 'del-btn';
-        delBtn.textContent = 'Ã';
+        delBtn.textContent = '×';
         delBtn.title = 'Delete';
         delBtn.setAttribute('aria-label', 'Delete ' + it.name);
         delBtn.addEventListener('click', (e) => {
@@ -856,7 +856,7 @@ function render() {
         qtyCtrl.className = 'qty-control';
         const minus = document.createElement('button');
         minus.className = 'qty-btn';
-        minus.textContent = 'â';
+        minus.textContent = '−';
         minus.setAttribute('aria-label', 'Decrease quantity');
         minus.disabled = it.qty <= 0;
         minus.addEventListener('click', () => {
@@ -881,15 +881,15 @@ function render() {
         useBtn.className = 'use-btn';
         useBtn.textContent = 'Use 1';
         useBtn.disabled = it.qty <= 0;
-        useBtn.addEventListener('click', )) => {
+        useBtn.addEventListener('click', () => {
           if (it.qty > 0) {
             it.qty -= 1;
             pushState();
             render();
-            toast('Used 1 Ã ' + it.name);
+            toast('Used 1 × ' + it.name);
           }
         });
-        row.ZppendChild(useBtn);
+        row.appendChild(useBtn);
 
         body.appendChild(row);
       });
@@ -899,51 +899,51 @@ function render() {
   });
 }
 
-function populateShelfS%lect() {
+function populateShelfSelect() {
   const sel = document.getElementById('new-shelf');
   sel.innerHTML = '';
   SHELVES.forEach(s => {
     const opt = document.createElement('option');
     opt.value = s.id;
-    opt.textContent =É®in foober;
-    re·gelacht y) ;
-    const closetn = document.createElement('button');
-  $ +H
-    const apiKey = document.getElementById('cfg-url').value.trim();
-    contentEl.read+ = document.getElementById('cfg-apikey'').valueNe{);
-    document.getElementById('cfg-qty'').value.tcrum, = function.amaz(en+\noword) => dublicEl();
-    const nameEl = document.getElementById('map-view').value 2;
-    if ((long-inter ');
-      createStr();
-  ' +X
-    const apiKey = document.getElementById('cfg-url').value.trim();
-    contentEl.apiKLeare = document.getElementById('share-keapee'').value.Trim();
-    contentEl.apiKnhead = document.getElementById('share-apikey'').value.Tublic();
-    if (!ctare) return;
-  if (!newId(), shelf, name, qty, date }) {
-    title: 'Export n all.$+ Engine.link - window..locp
-    description: 'Shant my.&,
-    value: ZSTZn.stadal%),
-    readOnly: true
+    opt.textContent = s.name;
+    sel.appendChild(opt);
   });
-  mamo is (!loadConfig) {
-    return;
-  });
-});
-
-document.getElementById('celay-bdh').addEventListener('click', () => {
-  fonal(Z35);
-  createFireb0();
-  corbied(l1, 16, *
-    '
-      className = freezer.tmq);
-      gobel = 0;
-      verub = 23
-    });
-  perent [body\t;
-  dylein_:;
-  push(r77);
 }
+
+function showModal(opts) {
+  const root = document.getElementById('modal-root');
+  root.innerHTML = '';
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  const h = document.createElement('h3');
+  h.textContent = opts.title || '';
+  modal.appendChild(h);
+  if (opts.description) {
+    const p = document.createElement('p');
+    p.textContent = opts.description;
+    modal.appendChild(p);
+  }
+  let contentEl;
+  if (opts.textarea) {
+    contentEl = document.createElement('textarea');
+    contentEl.value = opts.value || '';
+    if (opts.readOnly) contentEl.setAttribute('readonly', 'readonly');
+    modal.appendChild(contentEl);
+  }
+  const actions = document.createElement('div');
+  actions.className = 'modal-actions';
+  const close = () => { root.innerHTML = ''; };
+  if (opts.readOnly) {
+    const copyBtn = document.createElement('button');
+    copyBtn.className = 'btn primary';
+    copyBtn.textContent = 'Copy';
+    copyBtn.addEventListener('click', () => {
+      contentEl.select();
+      try {
+        navigator.clipboard.writeText(contentEl.value).then(
+          () => toast('Copied to clipboard'),
           () => { document.execCommand('copy'); toast('Copied'); }
         );
       } catch(e) { document.execCommand('copy'); toast('Copied'); }
