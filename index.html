@@ -1033,7 +1033,10 @@ function showMain() {
   document.getElementById('setup-view').style.display = 'none';
   document.getElementById('main-view').style.display = 'block';
 }
-fg-apikey').value.trim();
+
+document.getElementById('setup-save').addEventListener('click', () => {
+  const dbUrl = document.getElementById('cfg-url').value.trim();
+  const apiKey = document.getElementById('cfg-apikey').value.trim();
   const secret = document.getElementById('cfg-secret').value.trim();
   if (!dbUrl || !apiKey || !secret) {
     toast('Fill in all three fields');
